@@ -1,203 +1,135 @@
-# Research Overview: 3D Fractal Formula Discovery and Export System
+# Research Documentation: 3D Fractal Formula Discovery
 
-## 1. Project Vision and Research Goals
+## Research Vision Statement
 
-This Rust-based fractal research laboratory investigates 3D/higher-dimensional fractal formulas using complex, prime, waveguide-inspired, hierarchical, and neural techniques. The system exports tested WGSL shaders and presets for Fosfora and WGSL Shader Studio, enabling integration with modern GPU-accelerated visualization pipelines.
+The objective of this research is to develop a systematic, reproducible methodology for discovering and cataloging 3D fractal formulas that extends beyond traditional mathematical exploration. By integrating complex-valued neural networks, prime-indexed operations, and waveguide-inspired dynamics, we seek to automate the discovery of novel fractal structures with verifiable mathematical properties.
 
-**Core Research Objectives:**
-- **Formula Discovery**: Systematically discover and catalog 3D fractal formulas beyond existing community collections
-- **Structured Database**: Build a scientific database of 3D fractal formulas with proper metadata, DE support, and provenance tracking
-- **GPU Export**: Generate verified WGSL shaders for real-time preview and Fosfora effect integration
-- **Research Methodology**: Provide a repeatable process for fractal formula discovery, moving beyond manual experimentation
+## Research Questions
 
-## 2. Analysis of Existing 3D Fractal Formula Databases
+1. **Can complex-valued neural operators generate 3D fractal formulas with superior visual complexity compared to classical power-based maps?**
+2. **How do prime-indexed scheduling mechanisms influence the self-similarity properties of recursive fractal structures?**
+3. **What role do waveguide delay/scattering networks play in creating structured heterogeneity within fractal iterations?**
+4. **Is it possible to establish a quantitative metric for "fractal novelty" that can guide automated discovery?**
 
-### Mandelbulb3D and Mandelbulber
+## Theoretical Foundation
 
-Mandelbulb3D and Mandelbulber have something close to a database of 3D fractal formulas, but it's **not a single "scientific DB"** with a clearly documented automated discovery process. It's a **curated and community-extended collection** of hand-designed formulas, plus hybrids and transforms, accumulated over years by the original authors and many contributors.
+### Core Research Hypothesis
 
-**Mandelbulb3D Structure:**
-- **Dozens of core formulas**: Mandelbulb variants, Mandelbox, Menger sponge, Quaternion Julias, IFS shapes, etc.
-- **Transform/modifier formulas**: folds, rotations, twists, warps, tilings, etc.
-- **Hybrid engine**: Can stack and blend up to 6 formulas in one scene with separate iteration counts and mixing rules.
-- **Categorization**: Formulas categorized by type: "3D", "3Da", "4D", "4Da", and transform/IFS types.
-- **Loading**: Loadable as M3F formula files, with additional packs released by power users.
+Our research conjectures that a **structured iteration system** combining three specialized operators will yield novel fractal behaviors:
 
-### How Existing Formulas Were Created
-
-**Original Mandelbulb Discovery:**
-The original Mandelbulb was discovered by Daniel White and Paul Nylander via hand analysis and experimentation in spherical coordinates. They searched for a 3D analogue of `z -> z^n + c` that preserves a useful notion of "power" in ℝ³.
-
-**Other Formulas in Mandelbulb3D:**
-- Classical 3D extensions (Mandelbox, Menger, Quaternion Julia, Hypercomplex) known from math/graphics communities
-- Custom constructs and transforms coded by Jesse and other contributors, based on their own experiments with algebraic forms, IFS theory, and distance estimation
-
-**Creation Process:**
-- **Manual discovery and experimentation**: "Stay in discovery mode, don't try to be deterministic."
-- **Hybridization**: "Stack and blend dozens of formulas; alternate iterations to get alien landscapes."
-- **Community contributions**: Power users explicitly hand-port new formulas to MB3D.
-
-### The Database Aspect
-
-What Mandelbulb3D/Mandelbulber actually has:
-1. **Formula registry**: Each formula is a named code module with a known category and UI parameters
-2. **Parameter database**: M3P files containing user-saved parameter sets and scenes combining formulas, transform sequences, and camera/lighting settings
-3. **Community repository**: DeviantArt, forums, tutorials, and packs with additional formulas and transforms
-
-However, there is **no published algorithm** documenting how these formulas were automatically discovered - they are the result of human mathematical insight + manual experimentation + incremental community contributions.
-
-## 3. Research Methodology: Building a Scientific 3D Fractal Database
-
-To match or exceed MB3D/Mandelbulber with a research-grade database, the following methodology is required:
-
-### Step 1: Define a Formula DSL (Domain-Specific Language)
-Instead of keeping formulas as arbitrary WGSL snippets, define:
-- **Base maps**: Complex/hypercomplex/WG fields
-- **Transforms**: Fold, rotate, scale, warp
-- **Compositions**: Escape-time, DE, IFS
-- **Hybrid mixing rules**: Alternating iterations, additive blends, masks
-
-Each formula becomes an AST node (or graph) in that DSL, enabling:
-- Storage in a DB
-- Systematic analysis
-- Automatic generation
-
-### Step 2: Build a Structured Formula Registry
-
-For each formula, store:
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | String | Unique ID (e.g., "mandelbulb_n8") |
-| `name` | String | Display name |
-| `family` | String | Mandelbulb, Mandelbox, DE, etc. |
-| `dimension` | Int | 3, 4, etc. |
-| `category` | String | Escape-time, distance_estimator, IFS, transform, hybrid |
-| `iteration_core` | DSL/AST or structured JSON | Describing the map F |
-| `parameter_fields` | JSON Array | Names, types, ranges |
-| `de_supported` | Bool | Has a distance estimator? |
-| `wgsl_core_fn` | Text | WGSL function implementing core |
-| `known_good_presets` | JSON Array | Valid parameter sets + tags |
-| `origin` | String | "mandelbulb3d", "mandelbulber", "shadertoy", "research", "user" |
-| `notes` | Text | Provenance, references, caveats |
-
-### Step 3: Implement Discovery as Search on the DSL
-
-Use program search methods:
-- **Local search** in parameter space
-- **Evolutionary search** over formula graphs
-- **Symbolic regression-like operators** on the DSL
-- **Neural proposal models** (suggest DSL graphs given target descriptors)
-
-Use constraints:
-- Enforce DE stability
-- Enforce boundedness criteria
-- Enforce desired symmetry or dimensionality
-
-Each accepted candidate is added to the registry with metadata about how it was found.
-
-### Step 4: Human-in-the-Loop Discovery
-
-- Log every explored formula/parameter combination
-- Store user ratings or tags ("usable in VJ", "good for motion", "too slow to render")
-- Stream this into the DB
-- This way, human exploration is part of the search process
-
-## 4. Literature References
-
-Key references informing this research:
-
-1. **Fractal3DGen: Coarse-to-Fine 3D Generation** (openreview.net) - Hierarchical coarse-to-fine 3D generation for self-similar structure without dense voxels
-2. **Where Do We Stand with Implicit Neural Representations?** (arxiv.org/abs/2411.03688) - Survey of continuous field representations, strengths, and current limits
-3. **Awesome Implicit Representations** (github.com/vsitzmann/awesome-implicit-representations) - Curated gateway into INR literature
-4. **Generating Fractals Using Complex Valued Neural Networks** (amirabbasasadi.github.io) - Neural fractal generation using complex neural networks
-5. **A review of differentiable digital signal processing for music and audio** (comma.eecs.qmul.ac) - Structured differentiable systems, relevant for waveguide-inspired recurrence
-6. **Four Decades of Digital Waveguides** (alphaxiv.org/abs/2604.12878) - Background for wave propagation, delay/scattering networks, and structured dynamics
-7. **FractalNet** (github.com/gustavla/fractalnet) - Recursive fractal network generation ideas for operator-graph design
-8. **Neural Networks with Fractal Architecture** (mdpi.com/2504-3110/10/7/452) - Newer perspective on recursive neural design ideas
-
-## 5. Current Development Status
-
-### Core Modules Implemented
-- ✅ Formula DSL core types and operators (complex, prime, waveguide)
-- ✅ Field types and CPU evaluator (DenseField, SparseVoxelGrid, escape-time rendering)
-- ✅ Database schema (catalogue, hybrid composition)
-- ✅ WGSL shader implementations for Mandelbulb, Mandelbox, Menger, QJulia, IFS, transforms
-
-### In Progress
-- Exporter modules (WGSL standalone export, Fosfora effect package, Shader Studio snippet)
-- Search algorithms (random search, evolutionary baseline, neural proposal models)
-- Rendering pipeline integration (GPU WGSL preview path)
-- Presets system (JSON loading/saving, parameter management)
-
-## 6. Next Steps
-
-1. **Complete exporter modules** for WGSL, Fosfora, and Shader Studio formats
-2. **Implement search algorithms** for systematic formula discovery
-3. **Finalize rendering pipeline** with GPU acceleration via WGSL
-4. **Write comprehensive tests** for all formula families and export paths
-5. **Publish to crates.io** as `fractal-research-rs`
-6. **Create detailed documentation and examples** for researchers
-
-## 7. Integration Targets
-
-| Target | Integration Path | Status |
-|--------|-----------------|--------|
-| Fosfora | Full WGSL + `effect.json` export | Primary |
-| WGSL Shader Studio (nanovis) | Plain WGSL snippet | Supported |
-| ibaryshnikov/shader-editor | Plain WGSL snippet | Supported |
-| Bevy/WGPU | Native wgpu pipeline (future) | Planned |
-
-## 8. Formula Design Methodology
-
-A practical family of 3D fractal formulas iterates a latent state `z_t` plus a propagated state `w_t`, then decodes to a signed distance field, voxel field, or density field. 
-
-**Core Template:**
 ```
-z_{t+1} = F_θ(z_t, c, p_t, w_t)
+z_{t+1} = Waveguide(PrimeSchedule(ComplexNN(z_t, c), t), t)
 ```
+
 Where:
-- `z_t`: Complex or hypercomplex state
-- `c`: 3D point parameter
-- `p_t`: Prime-derived control code
-- `w_t`: Waveguide transport state
+- **ComplexNN** provides the nonlinear map in ℂ-space
+- **PrimeSchedule** controls algorithm selection at prime-indexed depths
+- **Waveguide** introduces structured delay/diffusion channels
 
-**Three promising components:**
-1. **Complex NN**: Defines the nonlinear map `F` iterated in ℂⁿ or quaternion-like space
-2. **Prime Logic**: Controls recursion depth, branch selection, skip connections, coefficient schedules
-3. **Waveguide Logic**: Introduces propagation, delay, reflection, and scattering between state channels
+### Mathematical Framework
 
-**Output Modes:**
-1. **Escape-time field**: For each 3D point, iterate until divergence and store escape count
-2. **Signed distance proxy**: Decode final latent state into SDF-like scalar, extract mesh
-3. **Sparse hierarchical volume**: Generate voxels recursively (Fractal3DGen approach)
+#### Complex-Valued Neural Operators
+Traditional 3D fractals use real-valued iterations `z ↦ z^n + c`. Our research explores complex-valued networks `NN_θ(z, c)` that:
+- Preserve phase structure through ℂ-space computation
+- Enable dynamic power/modulus operations learned from data
+- Support gradient-based optimization for search
 
-## 8. Repository Structure
+#### Prime-Indexed Scheduling Theory
+The prime number distribution provides a natural non-repetitive pattern:
+- Prime depths (2,3,5,7,11,...) create natural hierarchy
+- Non-prime depths allow structural variations
+- Prime coefficient sequences enable systematic exploration
+
+#### Waveguide Dynamics
+Drawing from DSP waveguide theory:
+- **Delay Lines**: `w_t ∈ ℝ^n` for multi-scale state
+- **Scattering Matrices**: Linear mixing of delay channels
+- **Reflection Coefficients**: Depth-dependent coupling
+
+## Literature Review
+
+### 3D Fractal Generation Prior Work
+
+| Work | Contribution | Limitation |
+|------|-------------|------------|
+| FRACTAL3DGEN (2023) | Hierarchical 3D generation without dense voxels | Limited to volume-based generation |
+| INR Survey (2024) | Continuous field representations for geometry | Not specialized for fractal structures |
+| Complex Neural Fractals (2021) | ℂ-space neural iterations | No structured recurrence, limited to 2D |
+| DDSP Review (2021) | Differentiable systems | Audio-focused, not geometric |
+| FractalNet (2016) | Recursive neural architectures | Image classification, not fractal discovery |
+
+### Research Gap Analysis
+
+Current 3D fractal tools (Mandelbulb3D, Mandelbulber) rely on:
+- **Manual discovery**: Researchers hand-craft formulas via trial-and-error
+- **Community curation**: Formulas accumulated without systematic methodology
+- **Limited automation**: No algorithmic discovery framework
+
+This research addresses these gaps through:
+1. Automated formula discovery via evolution/search
+2. Formal DSL representation enabling systematic analysis
+3. Database structure with complete provenance tracking
+
+## Research Methodology
+
+### Discovery Pipeline
 
 ```
-/docs/
-  research.md        # This document - research methodology and analysis
-  architecture.md    # Implementation plan: modules, data flow, export format
-/README.md          # Project overview and quickstart
-/src/
-  formula_dsl/      # Composable formula operators
-  field_core/       # Field representations and evaluators
-  search/           # Formula search strategies
-  render/           # CPU + GPU rendering
-  export/           # WGSL, Fosfora, Shader Studio exporters
-  presets/          # Built-in formula families and parameter sets
-  lib.rs            # Library root; re-exports all modules
-  main.rs           # CLI entry point (clap)
-Cargo.toml          # Rust project configuration
+Random Population
+       ↓
+Fitness Evaluation
+       ↓
+Selection → Crossover → Mutation → PrimeMask → WaveguideApply
+       ↓
+New Population
 ```
 
-## Summary
+### Evaluation Metrics
 
-This project fills the gap between Mandelbulb3D's informal formula registry and a genuine research-grade fractal database. By providing:
-1. A **formal DSL + registry** to store formulas plus metadata
-2. A **search/discovery layer** that systematically explores the space and logs results
-3. **WGSL export** to Fosfora/Shader Studio for immediate integration
+**Fitness = α·Novelty + β·VisualQuality + γ·DEStability**
 
-The tool enables genuine research into 3D fractal formula discovery rather than just manual experimentation within existing VJ runtimes.
+Where:
+- **Novelty**: Distance from existing formula database
+- **VisualQuality**: Edge complexity from gradient analysis
+- **DEStability**: Convergence rate of distance estimator
+
+### Validation Protocol
+
+1. **CPU Reference Evaluation**: Validate against mathematical definition
+2. **GPU WGSL Generation**: Auto-generate verified shaders
+3. **Fosfora Integration**: Test in deployment environment
+4. **Human Rating**: Collect qualitative feedback on visual appeal
+
+## Research Database Schema
+
+Each discovered formula will be catalogued with:
+
+| Field | Purpose |
+|-------|---------|
+| `id` | Unique identifier with version tag |
+| `dsl_graph` | Formal AST representation |
+| `category` | Fractal type classification |
+| `parameters` | Search space definition |
+| `de_formula` | Distance estimator expression |
+| `wgsl_export` | Verified GPU implementation |
+| `discovery_method` | Search algorithm and parameters |
+| `validation_score` | Fitness components and human rating |
+
+## Expected Contributions
+
+1. **Novel 3D fractal algorithms** beyond existing catalogs
+2. **Formal DSL** for reproducible formula representation
+3. **Open database** of discovered formulas with full metadata
+4. **Export pipeline** to WGSL for real-time rendering
+
+## Research Ethics
+
+All discovered formulas will be:
+- Reproducibly generated from the formal DSL
+- Documented with complete derivation process
+- Shared openly for community validation and extension
+- Accompanied by parameter sets and quality metrics
 
 ---
-*Document generated as part of fractal research lab implementation. Last updated: 2026-08-14*
+*Research lead: fractal-research-rs team*
+*Research period: 2026*
