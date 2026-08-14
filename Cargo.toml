@@ -1,0 +1,27 @@
+[package]
+name = "fractal-research-rs"
+version = "0.1.0"
+edition = "2021"
+description = "A standalone Rust fractal research lab investigating 3D/higher-dimensional fractal formulas using complex, prime, waveguide-inspired, hierarchical, and neural techniques, exporting WGSL shaders and presets for Fosfora and WGSL Shader Studio."
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/fractal-research-rs/fractal-research-rs"
+keywords = ["fractal", "wgsl", "webgpu", "shader", "research"]
+categories = ["mathematics", "rendering", "science"]
+
+[dependencies]
+num-complex = "0.4"
+nalgebra = { version = "0.33", features = ["serde-serialize"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+rayon = "1.10"
+clap = { version = "4.5", features = ["derive"] }
+thiserror = "2.0"
+image = { version = "0.25", default-features = false, features = ["png"] }
+
+[[bin]]
+name = "fractal_research"
+path = "src/main.rs"
+
+[lib]
+name = "fractal_research"
+path = "src/lib.rs"
