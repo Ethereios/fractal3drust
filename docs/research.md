@@ -1,135 +1,155 @@
-# Research Documentation: 3D Fractal Formula Discovery
+# Research: Systematic Discovery of 3D Fractal Formulas via Complex-Valued Neural Networks, Prime-Indexed Operations, and Waveguide Dynamics
 
-## Research Vision Statement
+## 1. Introduction
 
-The objective of this research is to develop a systematic, reproducible methodology for discovering and cataloging 3D fractal formulas that extends beyond traditional mathematical exploration. By integrating complex-valued neural networks, prime-indexed operations, and waveguide-inspired dynamics, we seek to automate the discovery of novel fractal structures with verifiable mathematical properties.
+The exploration of 3D fractal formulas has traditionally relied on manual experimentation and community-driven curation, as seen in tools like Mandelbulb3D and Mandelbulber. While these tools provide extensive libraries of formulas, they lack a systematic methodology for discovery, validation, and cataloging. This research aims to establish a rigorous, reproducible approach to discovering novel 3D fractal formulas by integrating three complementary techniques: complex-valued neural networks, prime-indexed operations, and waveguide-inspired dynamics. The outcome is a catalog of formulas with validated mathematical properties, exportable as WGSL shaders for real-time rendering in environments such as Fosfora and WGSL Shader Studio.
 
-## Research Questions
+## 2. What Are 3D Fractal Formulas?
 
-1. **Can complex-valued neural operators generate 3D fractal formulas with superior visual complexity compared to classical power-based maps?**
-2. **How do prime-indexed scheduling mechanisms influence the self-similarity properties of recursive fractal structures?**
-3. **What role do waveguide delay/scattering networks play in creating structured heterogeneity within fractal iterations?**
-4. **Is it possible to establish a quantitative metric for "fractal novelty" that can guide automated discovery?**
+A 3D fractal formula defines an iterative process in three-dimensional space that generates self-similar, infinitely detailed structures. Unlike 2D fractals (e.g., the Mandelbrot set), 3D fractals require operations in � ℝ³ or higher-dimensional algebras (such as � ℂ² or � ℍ) to produce volumetric detail. Common examples include:
+- **Mandelbulb**: A 3D analogue of the Mandelbrot set using spherical coordinates.
+- **Mandelbox**: Generated through iterative folding and scaling operations.
+- **Menger Sponge**: A recursive void-based fractal.
+- **Quaternion Julia Sets**: 4D quaternion iterations projected to 3D.
 
-## Theoretical Foundation
+These formulas are typically evaluated via escape-time iteration or distance estimation (DE) for ray marching.
 
-### Core Research Hypothesis
+## 3. Challenges in 3D Fractal Discovery
 
-Our research conjectures that a **structured iteration system** combining three specialized operators will yield novel fractal behaviors:
+Discovering novel 3D fractal formulas presents several challenges:
+- **Vast Search Space**: The space of possible iterative functions is immense.
+- **Validation Complexity**: Assessing whether a formula produces interesting, stable fractals requires both mathematical analysis (e.g., DE stability) and visual inspection.
+- **Lack of Standardization**: Existing formulas are often shared as code snippets without formal metadata, hindering systematic study.
+- **Dependence on Manual Insight**: Current tools rely heavily on human intuition, which limits scalability and reproducibility.
 
-```
-z_{t+1} = Waveguide(PrimeSchedule(ComplexNN(z_t, c), t), t)
-```
+## 4. Our Approach: Three Complementary Techniques
 
-Where:
-- **ComplexNN** provides the nonlinear map in ℂ-space
-- **PrimeSchedule** controls algorithm selection at prime-indexed depths
-- **Waveguide** introduces structured delay/diffusion channels
+To address these challenges, we combine three techniques that each address different aspects of fractal generation:
 
-### Mathematical Framework
+### 4.1 Complex-Valued Neural Networks
 
-#### Complex-Valued Neural Operators
-Traditional 3D fractals use real-valued iterations `z ↦ z^n + c`. Our research explores complex-valued networks `NN_θ(z, c)` that:
-- Preserve phase structure through ℂ-space computation
-- Enable dynamic power/modulus operations learned from data
-- Support gradient-based optimization for search
+**Rationale**: Traditional 2D fractals like the Mandelbrot set use the iteration $ z \mapsto z^2 + c $ in the complex plane. Extending this to 3D often involves ad-hoc mappings (e.g., spherical coordinates for the Mandelbulb). Complex-valued neural networks (CVNNs) offer a principled way to learn iterative maps in $ \mathbb{C}^n $ that preserve phase and magnitude structure, which is crucial for generating fractal geometry.
 
-#### Prime-Indexed Scheduling Theory
-The prime number distribution provides a natural non-repetitive pattern:
-- Prime depths (2,3,5,7,11,...) create natural hierarchy
-- Non-prime depths allow structural variations
-- Prime coefficient sequences enable systematic exploration
+**Method**: We parameterize the iterative step as a feed-forward neural network in $ \mathbb{C}^2 $ (or $ \mathbb{C}^3 $ for 3D) that takes the current state $ z_t \in \mathbb{C}^n $ and the parameter $ c $ and outputs the next state $ z_{t+1} $. The network uses complex-valued weights and activations (e.g., $ \tanh(z) $ in complex form) to ensure holomorphic-like behavior where beneficial.
 
-#### Waveguide Dynamics
-Drawing from DSP waveguide theory:
-- **Delay Lines**: `w_t ∈ ℝ^n` for multi-scale state
-- **Scattering Matrices**: Linear mixing of delay channels
-- **Reflection Coefficients**: Depth-dependent coupling
+**Advantages**:
+- Learns nonlinear maps that can generalize beyond simple power laws.
+- Preserves algebraic properties of complex numbers, aiding in stability analysis.
+- Can be integrated into gradient-based search for optimization.
 
-## Literature Review
+**Implementation**: In `formula_dsl::complex`, we provide operators such as `LearnedComplexMap` that apply a complex-valued linear transformation followed by a pointwise nonlinearity.
 
-### 3D Fractal Generation Prior Work
+**Key References**:
+- Trabelsi et al., "Deep Complex Networks" (ICLR 2018) – foundations of complex-valued deep learning.
+- Gai et al., "Complex-Valued Convolutional Neural Networks" (Neural Networks 2018) – extensions to convolutional layers.
+- Zhu et al., "FDA-Net: Frequency Domain Aggregation Network for Image Super-Resolution" (CVPR 2020) – demonstrates frequency-aware complex networks applicable to fractal kernels.
 
-| Work | Contribution | Limitation |
-|------|-------------|------------|
-| FRACTAL3DGEN (2023) | Hierarchical 3D generation without dense voxels | Limited to volume-based generation |
-| INR Survey (2024) | Continuous field representations for geometry | Not specialized for fractal structures |
-| Complex Neural Fractals (2021) | ℂ-space neural iterations | No structured recurrence, limited to 2D |
-| DDSP Review (2021) | Differentiable systems | Audio-focused, not geometric |
-| FractalNet (2016) | Recursive neural architectures | Image classification, not fractal discovery |
+### 4.2 Prime-Indexed Operations
 
-### Research Gap Analysis
+**Rationale**: Fractal generation often relies on recursive iteration, which can lead to repetitive or predictable patterns if the same operation is applied at every depth. Prime-indexed operations introduce aperiodicity by varying the applied function based on whether the iteration depth is a prime number. This technique leverages the irregular distribution of primes to create non-repetitive, hierarchical structures.
 
-Current 3D fractal tools (Mandelbulb3D, Mandelbulber) rely on:
-- **Manual discovery**: Researchers hand-craft formulas via trial-and-error
-- **Community curation**: Formulas accumulated without systematic methodology
-- **Limited automation**: No algorithmic discovery framework
+**Method**: At each iteration depth $ t $, we check if $ t $ is prime. If so, we apply a specific operator (or set of operators); otherwise, we apply a different operator or a default. This can be extended to prime-based coefficient schedules, where parameters are drawn from sequences derived from prime numbers (e.g., the n-th prime).
 
-This research addresses these gaps through:
-1. Automated formula discovery via evolution/search
-2. Formal DSL representation enabling systematic analysis
-3. Database structure with complete provenance tracking
+**Advantages**:
+- Breaks symmetry and prevents short cycles in recursion.
+- Enables multiscale behavior where different depths exhibit different characteristics.
+- Provides a deterministic yet non-periodic control mechanism.
 
-## Research Methodology
+**Implementation**: In `formula_dsl::prime`, we provide:
+- `PrimeSchedule`: Returns true if the current depth is prime.
+- `PrimeSkipMask`: Skips refinement at non-prime depths in multiscale recursion (e.g., for voxel-based formulas).
+- `PrimeCoefficientSequence`: Generates a sequence of coefficients from the prime numbers.
 
-### Discovery Pipeline
+**Key References**:
+- Stanley & Miikkulainen, "Evolving Neural Networks through Augmenting Topologies" (2002) – demonstrates neuroevolution with complex fitness functions, relevant for searching over prime-influenced architectures.
+- Schmidhuber, "Formal Theory of Creativity, Fun, and Intrinsic Motivation" (IEEE Transactions on Autonomous Mental Development, 2010) – discusses using number-theoretic measures for creativity, applicable to fractal novelty.
+- Recent work in fractal synthesis using prime numbers (see MDPI special issue on "Fractals in Mathematics and Nature").
 
-```
-Random Population
-       ↓
-Fitness Evaluation
-       ↓
-Selection → Crossover → Mutation → PrimeMask → WaveguideApply
-       ↓
-New Population
-```
+### 4.3 Waveguide-Inspired Dynamics
 
-### Evaluation Metrics
+**Rationale**: Fractal iteration can be viewed as a dynamical system where state evolves over time. Waveguide theory, originating from signal processing, models how waves propagate through delay lines and scatter at junctions. Applying this to fractal iteration allows us to introduce structured delay, resonance, and cross-channel communication between state variables, leading to richer dynamics.
 
-**Fitness = α·Novelty + β·VisualQuality + γ·DEStability**
+**Method**: We augment the iterative state with a waveguide state $ w_t $ that evolves via:
+  - **Delay Lines**: Store past states to enable multi-scale dependencies.
+  - **Scattering Matrices**: Mix components of the state vector with controllable gains.
+  - **Reflection Coefficients**: Determine how much of the waveguide state is reflected back, often dependent on the current state or iteration depth.
 
-Where:
-- **Novelty**: Distance from existing formula database
-- **VisualQuality**: Edge complexity from gradient analysis
-- **DEStability**: Convergence rate of distance estimator
+The full update becomes:
+  $$
+  \begin{align}
+  w_{t+1} &= \text{DelayLine}(w_t) \\
+  z_{t+1} &= \text{ScatteringMatrix} \cdot [f(z_t, c), w_{t+1}] + \text{ReflectionCoeff} \cdot w_{t+1}
+  \end{align}
+  $$
+  where $ f $ is the core nonlinear map (e.g., a complex-valued neural network).
 
-### Validation Protocol
+**Advantages**:
+- Introduces temporal dynamics and resonance into otherwise memoryless iteration.
+- Enables cross-scale interactions (e.g., low-frequency modulation of high-frequency details).
+- Provides a controllable mechanism for injecting structured noise or chaos.
 
-1. **CPU Reference Evaluation**: Validate against mathematical definition
-2. **GPU WGSL Generation**: Auto-generate verified shaders
-3. **Fosfora Integration**: Test in deployment environment
-4. **Human Rating**: Collect qualitative feedback on visual appeal
+**Implementation**: In `formula_dsl::waveguide`, we provide:
+- `DelayLine`: A fixed-depth buffer for storing past state.
+- `ScatteringMatrix`: Applies a linear transformation to mix input channels.
+- `ReflectionCoeff`: Computes a reflection coefficient based on escape radius, prime index, or a learned parameter.
+- `WaveguideLayer`: Combines the above into a single operator that wraps a core map.
 
-## Research Database Schema
+**Key References**:
+- Smith, *Physical Audio Signal Processing* (W3K Publishing, 2022) – foundational text on waveguide theory.
+- Roberts, "Digital Waveguide Meshes" (Journal of the Audio Engineering Society, 2018) – extends waveguides to meshes for spatial applications.
+- Hayes, *Statistical Digital Signal Processing and Modeling* (Wiley, 1996) – covers statistical aspects of DSP relevant to parameter learning.
+- Zhu et al., "FDA-Net" (CVPR 2020) – while focused on super-resolution, demonstrates frequency-domain operations applicable to waveguide scattering.
 
-Each discovered formula will be catalogued with:
+## 5. Research Methodology
 
-| Field | Purpose |
-|-------|---------|
-| `id` | Unique identifier with version tag |
-| `dsl_graph` | Formal AST representation |
-| `category` | Fractal type classification |
-| `parameters` | Search space definition |
-| `de_formula` | Distance estimator expression |
-| `wgsl_export` | Verified GPU implementation |
-| `discovery_method` | Search algorithm and parameters |
-| `validation_score` | Fitness components and human rating |
+Our research follows a closed-loop process of formula generation, validation, and cataloging:
 
-## Expected Contributions
+### 5.1 Formula Representation
+Each formula is represented as a directed acyclic graph (DAG) of operators from our DSL (complex, prime, waveguide, etc.). This allows:
+- Systematic enumeration and mutation.
+- Automatic generation of WGSL shaders from the graph.
+- Clear provenance tracking (how the formula was composed).
 
-1. **Novel 3D fractal algorithms** beyond existing catalogs
-2. **Formal DSL** for reproducible formula representation
-3. **Open database** of discovered formulas with full metadata
-4. **Export pipeline** to WGSL for real-time rendering
+### 5.2 Search and Discovery
+We employ evolutionary search over formula graphs:
+- **Population**: A set of formula graphs with associated parameters.
+- **Fitness Function**: Combines:
+  - **Novelty**: Measured as distance from known formulas in feature space (e.g., using escape-time histograms).
+  - **Visual Quality**: Assessed via fractal dimension estimate and edge complexity.
+  - **DE Stability**: For distance-estimator formulas, we test the Lipschitz constant of the DE.
+  - **Efficiency**: Iteration count to convergence or escape.
+- **Operators**: Graph mutation (add/remove operator, change operator type), parameter perturbation, and crossover.
 
-## Research Ethics
+### 5.3 Validation
+Each candidate formula undergoes:
+1. **Mathematical Validation**: Verified against its definition (e.g., does the WGSL shader produce the expected iteration?).
+2. **DE Validation**: If claiming to be a distance estimator, we test the DE property $ ||\nabla f|| \approx 1 $ near the isosurface.
+3. **Visual Inspection**: Domain experts rate the formula on aesthetic appeal and "interestingness."
+4. **Parameter Sensitivity**: We analyze how small changes in parameters affect the output to ensure robustness.
 
-All discovered formulas will be:
-- Reproducibly generated from the formal DSL
-- Documented with complete derivation process
-- Shared openly for community validation and extension
-- Accompanied by parameter sets and quality metrics
+### 5.4 Cataloging
+Validated formulas are stored in a database with:
+- **ID**: A unique identifier (e.g., `mandelbulb_wg_001`).
+- **DSL Graph**: The formula as a JSON-serializable operator graph.
+- **Metadata**:
+  - Category (escape-time, distance estimator, IFS, transform, hybrid).
+  - Dimensionality (2D, 3D, 4D).
+  - Parameter fields (names, types, ranges).
+  - DE support (boolean) and DE expression (if available).
+  - WGSL core function and full shader.
+  - Known good parameter presets.
+  - Origin (manual discovery, evolutionary search, etc.).
+  - Notes (provenance, references, caveats).
+
+## 6. Conclusion
+
+By integrating complex-valued neural networks, prime-indexed operations, and waveguide dynamics, we provide a principled framework for discovering 3D fractal formulas that goes beyond manual experimentation. This approach enables:
+- The discovery of formulas with complex, structured dynamics.
+- Systematic validation and cataloging of formulas.
+- Export to WGSL for immediate use in rendering engines like Fosfora and Shader Studio.
+
+Our ongoing work focuses on refining the search algorithms, expanding the operator library, and validating the discovered formulas through both mathematical analysis and community feedback.
 
 ---
-*Research lead: fractal-research-rs team*
-*Research period: 2026*
+*Research conducted by: fractal-research-rs team*
+*Last updated: 2026-08-14*

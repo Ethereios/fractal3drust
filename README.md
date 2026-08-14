@@ -1,17 +1,33 @@
 # Fractal Research Lab
 
-A Rust library for discovering and exporting 3D fractal formulas using complex, prime, waveguide-inspired, hierarchical, and neural techniques, exporting WGSL shaders and presets for Fosfora and WGSL Shader Studio.
+A standalone Rust fractal research lab investigating 3D/higher-dimensional fractal formulas using complex, prime, waveguide-inspired, hierarchical, and neural techniques, exporting WGSL shaders and presets for Fosfora and WGSL Shader Studio.
 
-## Project Structure
+## Project Status
 
-- Formula DSL for composable fractal operations
-- Database of known 3D fractal families with WGSL implementations
-- CPU evaluation and rendering
-- Export to WGSL, Fosfora, and Shader Studio formats
+- **Core modules implemented**: formula_dsl, field_core, db, render, error
+- **In progress**: exporter modules (wgsl, fosfora, shader_studio), search algorithms, rendering pipeline integration, presets system
+- **Goal**: Provide a systematic approach to discover and catalog 3D fractal formulas with automated validation and GPU export.
 
 ## Core Features
 
-- Formula DSL with complex, prime, waveguide, hierarchical operators
-- Formula families: Mandelbulb-WG, SDF-recurrent, sparse-voxel recursive
-- Support for vector parameters in ParameterField via vector_dim
-- Export to WGSL shaders and presets for Fosfora and WGSL Shader Studio
+- Formula DSL for composable fractal operations (complex, prime, waveguide, hierarchical, neural)
+- Database schema for cataloging 3D fractal formulas with metadata (category, dimension, DE support, provenance)
+- CPU evaluation (escape-time rendering, distance estimation, sparse voxel grids)
+- WGSL shader export for Fosfora and WGSL Shader Studio
+- Support for vector parameters in ParameterField via vector_dim for WGSL uniform generation
+
+## Getting Started
+
+```bash
+git clone https://github.com/Ethereios/fractal3drust.git
+cd fractal3drust
+cargo build --release
+```
+
+## Usage
+
+See `src/main.rs` for the CLI interface (work in progress).
+
+## License
+
+MIT OR Apache-2.0
