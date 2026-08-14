@@ -56,6 +56,7 @@ pub struct ParameterField {
 }
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Serialize, Deserialize)]
+pub enum ParamFieldType {
     Float,
     Int,
     Bool,

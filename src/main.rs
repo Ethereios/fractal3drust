@@ -1,5 +1,5 @@
 use clap::{Parser, Subcommand};
-use fractal_research_rs::{
+use fractal_research::{
     db::{catalogue, find, HybridEntry},
     error::FractalResult,
     field_core::{evaluate_grid, render_escape_time, raymarch, estimate_normal},
@@ -70,10 +70,15 @@ enum ExportFormat {
     ShaderStudio,
 }
 
-#[derive(clap::ValueEnum, Clone)]
+#[derive(clap::ValueEnum, Clone, Debug)]
 enum SearchStrategy {
     Random,
     Evolution,
+}
+impl std::fmt::Display for SearchStrategy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 fn main() -> FractalResult<()> {
@@ -160,7 +165,7 @@ fn main() -> FractalResult<()> {
                     // Shader file
                     std::fs::write(dir.join("shader.wgsl"), &formula.wgsl_shader)?;
                     // Effect JSON
-                    let effect = fosfora::EffectJson {
+                    let effect = fosForaFx::EffectJson {
                         name: formula.id.clone(),
                         label: formula.name.clone(),
                         description: formula.notes.clone(),
