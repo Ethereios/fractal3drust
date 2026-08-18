@@ -1,0 +1,27 @@
+# Cargo configuration: limit CPU usage while maximizing compilation speed
+# Jobs are kept limited to one always for deterministic behavior
+[build]
+jobs = 1
+jobserver = false
+
+# Limit parallelism in dependencies like rayon at runtime
+[env]
+RAYON_NUM_THREADS = "1"
+NUM_JOBS = "1"
+CARGO_BUILD_JOBS = "1"
+CARGO_TEST_THREADS = "1"
+
+# Sparse registry for faster downloads (reduces parallelization overhead)
+[registries.crates-io]
+protocol = "sparse"
+
+[net]
+git-fetch-with-cli = true
+
+# Alias custom commands for faster cargo check/test/run
+[alias]
+dev = "run --"
+check-dev = "check"
+test-fast = "test -- --test-threads=1"
+run-dev = "run --"
+bench-single = "bench -- --test-threads=1"
