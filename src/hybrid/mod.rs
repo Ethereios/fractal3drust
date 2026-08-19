@@ -3,6 +3,8 @@
 //! This module provides template structures for creating hybrid fractal formulas
 //! by combining multiple base formulas with mixing rules.
 
+pub mod cli;
+
 use crate::catalogue;
 use crate::db::hybrid::{HybridEntry, MixRule};
 use crate::db::{FormulaEntry, FormulaCategory, FormulaDSL, ParameterField};
