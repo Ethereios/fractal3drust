@@ -8,10 +8,13 @@ pub mod cli;
 use crate::catalogue;
 use crate::db::hybrid::{HybridEntry, MixRule};
 use crate::db::{FormulaEntry, FormulaCategory, FormulaDSL, ParameterField};
-use std::fs;
+use crate::formula_dsl::prime::PrimeSchedule;
 
-/// Generate a hybrid formula and return its WGSL
-pub fn generate_hybrid(hybrid_name: &str) -> Result<String, String> {
+/// Generate a hybrid formula and return its WGSL with optional PrimeSchedule
+pub fn generate_hybrid_with_schedule(
+    hybrid_name: &str,
+    schedule: Option<&PrimeSchedule>
+) -> Result<String, String> {
     let formulas = catalogue();
     
     let hybrid = match hybrid_name {
@@ -22,15 +25,29 @@ pub fn generate_hybrid(hybrid_name: &str) -> Result<String, String> {
         _ => return Err(format!("Unknown hybrid template: {}", hybrid_name)),
     };
 
-    let wgsl = generate_hybrid_wgsl(&hybrid, &formulas);
+    let wgsl = generate_hybrid_wgsl(&hybrid, &formulas, schedule);
     Ok(wgsl)
 }
 
-/// Export hybrid to file
-pub fn export_hybrid(hybrid_name: &str, output_path: &str) -> Result<(), String> {
-    let wgsl = generate_hybrid(hybrid_name)?;
+/// Generate a hybrid formula and return its WGSL (without schedule)
+pub fn generate_hybrid(hybrid_name: &str) -> Result<String, String> {
+    generate_hybrid_with_schedule(hybrid_name, None)
+}
+
+/// Export hybrid to file with optional schedule
+pub fn export_hybrid_with_schedule(
+    hybrid_name: &str,
+    output_path: &str,
+    schedule: Option<PrimeSchedule>
+) -> Result<(), String> {
+    let wgsl = generate_hybrid_with_schedule(hybrid_name, schedule.as_ref())?;
     std::fs::write(output_path, wgsl)
         .map_err(|e| format!("Failed to write hybrid to {}: {}", output_path, e))
+}
+
+/// Export hybrid to file (without schedule)
+pub fn export_hybrid(hybrid_name: &str, output_path: &str) -> Result<(), String> {
+    export_hybrid_with_schedule(hybrid_name, output_path, None)
 }
 
 /// List available hybrid templates
@@ -157,8 +174,8 @@ pub mod templates {
     }
 }
 
-/// Generate WGSL shader template for a hybrid formula
-pub fn generate_hybrid_wgsl(hybrid: &HybridEntry, formulas: &[FormulaEntry]) -> String {
+/// Generate WGSL shader template for a hybrid formula with optional PrimeSchedule
+pub fn generate_hybrid_wgsl(hybrid: &HybridEntry, formulas: &[FormulaEntry], schedule: Option<&crate::formula_dsl::prime::PrimeSchedule>) -> String {
     let mut shader = String::new();
     shader.push_str(&format!("// Hybrid: {}\n", hybrid.name));
     shader.push_str(&format!("// Mix Rule: {:?}\n\n", hybrid.mix_rule));
@@ -179,47 +196,106 @@ pub fn generate_hybrid_wgsl(hybrid: &HybridEntry, formulas: &[FormulaEntry]) -> 
         }
     }
 
+    // Include PrimeSchedule WGSL if provided
+    if let Some(schedule) = schedule {
+        if schedule.prime_mode || !schedule.overrides.is_empty() {
+            shader.push_str("// Prime Schedule Integration\n");
+            shader.push_str(&schedule.as_wgsl());
+            shader.push_str(&format!(
+                "fn prime_factor(d: i32) -> f32 {{\n    return is_prime(d + 2) ? {} : {};\n}}\n\n",
+                schedule.amplification, schedule.dampening
+            ));
+        }
+    }
+
     // Generate combined DE based on mix rule
     shader.push_str("fn fract_de(p: vec3<f32>) -> f32 {\n");
     match hybrid.mix_rule {
         MixRule::AlternateIterations => {
-            shader.push_str("    // Alternate iterations (pseudo-code)\n");
+            shader.push_str("    // Alternate iterations (pseudo-code - requires custom raymarch loop)\n");
             shader.push_str("    // This requires a custom raymarch loop\n");
             shader.push_str("    return fract_de_0(p); // Placeholder\n");
         }
         MixRule::AdditiveBlend => {
             shader.push_str("    let d0 = fract_de_0(p);\n");
             shader.push_str("    let d1 = fract_de_1(p);\n");
-            shader.push_str(&format!(
-                "    return {} * d0 + {} * d1;\n",
-                hybrid.iteration_counts.first().unwrap_or(&1.0),
-                hybrid.iteration_counts.get(1).unwrap_or(&1.0)
-            ));
+            if let Some(schedule) = schedule {
+                if schedule.prime_mode {
+                    shader.push_str("    // Apply prime schedule to weights\n");
+                    shader.push_str("    let w0 = prime_factor(0);\n");
+                    shader.push_str("    let w1 = prime_factor(1);\n");
+                    shader.push_str("    return w0 * d0 + w1 * d1;\n");
+                } else {
+                    shader.push_str(&format!(
+                        "    return {} * d0 + {} * d1;\n",
+                        hybrid.iteration_counts.first().unwrap_or(&1.0),
+                        hybrid.iteration_counts.get(1).unwrap_or(&1.0)
+                    ));
+                }
+            } else {
+                shader.push_str(&format!(
+                    "    return {} * d0 + {} * d1;\n",
+                    hybrid.iteration_counts.first().unwrap_or(&1.0),
+                    hybrid.iteration_counts.get(1).unwrap_or(&1.0)
+                ));
+            }
         }
         MixRule::WeightedAverage => {
             shader.push_str("    let d0 = fract_de_0(p);\n");
             shader.push_str("    let d1 = fract_de_1(p);\n");
-            shader.push_str(&format!(
-                "    return {} * d0 + {} * d1;\n",
-                hybrid.iteration_counts.first().unwrap_or(&1.0),
-                hybrid.iteration_counts.get(1).unwrap_or(&1.0)
-            ));
+            if let Some(schedule) = schedule {
+                if schedule.prime_mode {
+                    shader.push_str("    // Apply prime schedule to weights\n");
+                    shader.push_str("    let w0 = prime_factor(0);\n");
+                    shader.push_str("    let w1 = prime_factor(1);\n");
+                    shader.push_str("    return w0 * d0 + w1 * d1;\n");
+                } else {
+                    shader.push_str(&format!(
+                        "    return {} * d0 + {} * d1;\n",
+                        hybrid.iteration_counts.first().unwrap_or(&1.0),
+                        hybrid.iteration_counts.get(1).unwrap_or(&1.0)
+                    ));
+                }
+            } else {
+                shader.push_str(&format!(
+                    "    return {} * d0 + {} * d1;\n",
+                    hybrid.iteration_counts.first().unwrap_or(&1.0),
+                    hybrid.iteration_counts.get(1).unwrap_or(&1.0)
+                ));
+            }
         }
         MixRule::ConditionalSwitch => {
             shader.push_str("    // Conditional switch based on distance\n");
             shader.push_str("    let d0 = fract_de_0(p);\n");
             shader.push_str("    let d1 = fract_de_1(p);\n");
-            shader.push_str("    return select(d0, d1, d0 < 1.0); // Placeholder\n");
+            if let Some(schedule) = schedule {
+                if schedule.prime_mode {
+                    shader.push_str("    let w0 = prime_factor(0);\n");
+                    shader.push_str("    let w1 = prime_factor(1);\n");
+                    shader.push_str("    return select(w0 * d0, w1 * d1, d0 < 1.0);\n");
+                } else {
+                    shader.push_str("    return select(d0, d1, d0 < 1.0); // Placeholder\n");
+                }
+            } else {
+                shader.push_str("    return select(d0, d1, d0 < 1.0); // Placeholder\n");
+            }
         }
     }
     shader.push_str("}\n");
+
+    // Include PrimeConvolution WGSL if available
+    if let Some(schedule) = schedule {
+        if schedule.prime_mode {
+            shader.push_str("\n// PrimeConvolution integration available via prime_factor() and is_prime()\n");
+        }
+    }
 
     shader
 }
 
 /// Create a complete FormulaEntry for a hybrid (for catalog integration)
 pub fn create_hybrid_formula_entry(hybrid: &HybridEntry, formulas: &[FormulaEntry]) -> FormulaEntry {
-    let wgsl_shader = generate_hybrid_wgsl(hybrid, formulas);
+    let wgsl_shader = generate_hybrid_wgsl(hybrid, formulas, None);
 
     FormulaEntry::new(&hybrid.id, &hybrid.name, "hybrid", 3, FormulaCategory::Hybrid)
         .with_dsl(FormulaDSL::new())

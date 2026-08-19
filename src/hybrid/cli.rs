@@ -1,12 +1,13 @@
-//! CLI integration for hybrid fractal generation
-
 use crate::db::FormulaEntry;
 use crate::catalogue;
-use crate::hybrid::{generate_hybrid_wgsl, create_hybrid_formula_entry, templates};
+use crate::hybrid::{generate_hybrid_wgsl, create_hybrid_formula_entry, templates, generate_hybrid, export_hybrid};
 use crate::formula_dsl::prime::PrimeSchedule;
 
-/// Generate a hybrid formula and return its WGSL
-pub fn generate_hybrid_with_schedule(hybrid_name: &str, schedule: &Option<PrimeSchedule>) -> Result<String, String> {
+/// Generate a hybrid formula and return its WGSL with optional PrimeSchedule
+pub fn generate_hybrid_with_schedule(
+    hybrid_name: &str,
+    schedule: Option<PrimeSchedule>
+) -> Result<String, String> {
     let formulas = catalogue();
     
     let hybrid = match hybrid_name {
@@ -17,25 +18,19 @@ pub fn generate_hybrid_with_schedule(hybrid_name: &str, schedule: &Option<PrimeS
         _ => return Err(format!("Unknown hybrid template: {}", hybrid_name)),
     };
 
-    let wgsl = generate_hybrid_wgsl(&hybrid, &formulas);
+    let wgsl = generate_hybrid_wgsl(&hybrid, &formulas, schedule.as_ref());
     Ok(wgsl)
 }
 
 /// Export hybrid to file with optional schedule
-pub fn export_hybrid_with_schedule(hybrid_name: &str, output_path: &str, schedule: &Option<PrimeSchedule>) -> Result<(), String> {
+pub fn export_hybrid_with_schedule(
+    hybrid_name: &str,
+    output_path: &str,
+    schedule: Option<PrimeSchedule>
+) -> Result<(), String> {
     let wgsl = generate_hybrid_with_schedule(hybrid_name, schedule)?;
     std::fs::write(output_path, wgsl)
         .map_err(|e| format!("Failed to write hybrid to {}: {}", output_path, e))
-}
-
-/// Generate a hybrid formula and return its WGSL (without schedule)
-pub fn generate_hybrid(hybrid_name: &str) -> Result<String, String> {
-    generate_hybrid_with_schedule(hybrid_name, &None)
-}
-
-/// Export hybrid to file (without schedule)
-pub fn export_hybrid(hybrid_name: &str, output_path: &str) -> Result<(), String> {
-    export_hybrid_with_schedule(hybrid_name, output_path, &None)
 }
 
 /// List available hybrid templates
@@ -60,7 +55,7 @@ mod cli_tests {
             amplification: 1.8,
             dampening: 0.7,
         };
-        let result = generate_hybrid_with_schedule("prime_mandelbulb_sparse_voxel", &Some(schedule));
+        let result = generate_hybrid_with_schedule("prime_mandelbulb_sparse_voxel", Some(schedule));
         assert!(result.is_ok());
         let wgsl = result.unwrap();
         assert!(wgsl.contains("prime_mandelbulb_sparse_voxel"));
@@ -83,7 +78,7 @@ mod cli_tests {
             dampening: 0.7,
         };
         let output_path = "test_hybrid_schedule.wgsl";
-        let result = export_hybrid_with_schedule("prime_mandelbulb_sparse_voxel", output_path, &Some(schedule));
+        let result = export_hybrid_with_schedule("prime_mandelbulb_sparse_voxel", output_path, Some(schedule));
         assert!(result.is_ok());
         // Verify file was created
         assert!(std::path::Path::new(output_path).exists());
@@ -117,7 +112,7 @@ mod cli_tests {
             dampening: 0.7,
         };
         let output_path = "test_invalid.wgsl";
-        let result = export_hybrid_with_schedule("prime_mandelbulb_sparse_voxel", output_path, &Some(invalid_schedule));
+        let result = export_hybrid_with_schedule("prime_mandelbulb_sparse_voxel", output_path, Some(invalid_schedule));
         // Should still succeed but may produce warning in logs
         assert!(result.is_ok());
         std::fs::remove_file(output_path).ok();

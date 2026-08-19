@@ -2,7 +2,12 @@
 
 ## Overview
 
-This document describes the mathematical foundations, research methodology, and implementation details for the Fractal Research Lab. The lab implements a closed-loop discovery pipeline: **generate → validate → catalog → export** novel 3D fractal formulas.
+This document describes the mathematical foundations, research methodology, and implementation details for the Fractal Research Lab. The lab implements foundational mathematical operators for fractal research, with a focus on:
+- Complex-valued mathematics for iterative maps
+- Prime-indexed scheduling for recursion control
+- Waveguide-inspired dynamics for channel mixing
+
+The project is structured as a closed-loop discovery pipeline: **generate → validate → catalog → export** novel 3D fractal formulas.
 
 ---
 
@@ -10,14 +15,17 @@ This document describes the mathematical foundations, research methodology, and 
 
 ### 1. Complex-Valued Iterative Maps
 
-**Theory:** Extend the classical Mandelbrot iteration `z_{t+1} = z_t^2 + c` to `C^n` with learned or hand-crafted holomorphic-like operators. Phase and magnitude structure is preserved through:
-- Complex power: `z → z^p` for `p ∈ C`
+**Theory:** Extend the classical Mandelbrot iteration `z_{t+1} = z^2 + c` to `C^n` with mathematical operations that preserve phase and magnitude structure:
+- Complex power: `z → z^p` for `p ∈ ℝ`
 - Modulus nonlinearity: `z → z / |z| · f(|z|)`
 - Phase rotation: `z → z · e^{iθ}`
-- Learned complex maps: `z → W·z + b` with complex weights
 
 **Implementation:** `src/formula_dsl/complex.rs`
-- `ComplexPower`, `ComplexModulusNonlinear`, `PhaseRotate`, `ComplexProduct`, `LearnedComplexMap`
+- `complex_power(z, n)` — Power operation in complex space
+- `modulus_nonlinear(z, f)` — Modulus-based nonlinearity
+- `ModulusFunc` enum — Identity, Power(n), Tanh, Log
+- `phase_rotate(z, theta)` — Phase rotation
+- `complex_sum(inputs, weights)` — Linear combination
 
 **WGSL Export:** All complex operators have deterministic WGSL implementations using `vec2<f32>` for complex arithmetic.
 
@@ -38,8 +46,9 @@ This document describes the mathematical foundations, research methodology, and 
 **Implementation:** `src/formula_dsl/prime.rs`
 - `is_prime(n)` — O(√n) trial division
 - `prime_sequence(count)` / `primes_up_to(max)` — prime generators
-- `PrimeSchedule` — `prime_mode`, `overrides`, `amplification`, `dampening`, `is_active(d)`, `factor(d)`, `coefficient_sequence(base, max_depth)`, `as_wgsl()`
+- `PrimeSchedule` — `prime_mode`, `overrides`, `amplification`, `dampening`, `is_active(d)`, `factor(d)`, `coefficient_sequence(base, max_depth)`.as_wgsl()`
 - `PrimeSkipMask` — `max_depth`, `base_resolution`, `should_refine(dx,dy,dz,depth)`, `as_wgsl()`
+- `PrimeConvolution` — Framework for prime-gated kernel activation (convolution logic pending)
 
 **WGSL Export (PrimeSchedule):**
 ```wgsl
@@ -88,7 +97,7 @@ cargo dev -- --export --formula mandelbulb_wg --format wgsl --output mandelbulb-
 **Implementation:** `src/formula_dsl/waveguide.rs`
 - `DelayLine(depth)` — FIFO buffer of complex/real state
 - `ScatteringMatrix(gains)` — N×N matrix with configurable channel coupling
-- `ReflectionCoeff(mode)` — `EscapeRadius`, `PrimeIndex`, `Learned`
+- `ReflectionCoeff(mode)` — `EscapeRadius`, `PrimeIndex`, `Fixed`
 - `WaveguideLayer` — Composes delay + scattering + reflection
 
 **Integration:** In Mandelbulb-WG and SDF-Recurrent formulas, waveguide layer sits between spherical coordinate transform and prime gating:
@@ -101,7 +110,7 @@ spherical_power → waveguide_scatter → prime_gate → de_accumulate
 ## Formula Catalogue (Implemented)
 
 | ID | Name | Family | Dimension | Category | Prime | Waveguide | Notes |
-|---|---|---|---|---|---|---|---|
+|----|------|--------|-----------|----------|-------|-----------|-------|
 | mandelbulb_n8 | Mandelbulb (n=8) | mandelbulb | 3 | DistanceEstimator | ✓ | | Classic power-8 Mandelbulb |
 | mandelbulb_n7 | Mandelbulb (n=7) | mandelbulb | 3 | DistanceEstimator | ✓ | | Smoother organic shapes |
 | mandelbox_standard | Mandelbox | mandelbox | 3 | DistanceEstimator | ✓ | | Box fold + sphere fold |
@@ -115,6 +124,29 @@ spherical_power → waveguide_scatter → prime_gate → de_accumulate
 | mandelbulb_wg | Mandelbulb-WG | mandelbulb_wg | 3 | DistanceEstimator | ✓ | ✓ | **Waveguide + prime modulation** |
 | sdf_recurrent | SDF-Recurrent | sdf_recurrent | 3 | DistanceEstimator | ✓ | ✓ | Complex-recurrent + SDF decode |
 | sparse_voxel_recursive | Sparse-Voxel-Recursive | sparse_voxel | 3 | DistanceEstimator | ✓ | ✓ | Hierarchical prime-skip + waveguide |
+
+---
+
+## Hybrid Composition System
+
+### Overview
+The hybrid composition system allows combining multiple base formulas with mixing rules. Implemented in `src/hybrid/`.
+
+### Available Templates
+
+| Template | Composition | Mix Rule |
+|----------|-------------|----------|
+| `mandelbulb_mandelbox_alternate` | Mandelbulb n=8 + Mandelbox | AlternateIterations |
+| `mandelbulb_wg_sdf_alternate` | WG-enhanced Mandelbulb + SDF-Recurrent | AlternateIterations |
+| `prime_mandelbulb_sparse_voxel` | Prime-wired Mandelbulb + Sparse Voxel | WeightedAverage |
+| `quaternion_mandelbox_blend` | Quaternion Julia + Mandelbox | AdditiveBlend |
+
+### Usage
+```bash
+# Generate hybrid WGSL
+cargo dev -- --export --formula prime_mandelbulb_sparse_voxel --format wgsl \
+  --prime-mode --amplification 1.8 --override-depths 3,5,7 --output hybrid.wgsl
+```
 
 ---
 
@@ -137,36 +169,24 @@ let mut schedule = PrimeSchedule::active()
     .with_amplification(1.8);   // Boost contribution at active depths
 ```
 
-### WGSL Output Example
-
-```wgsl
-fn prime_refine(dx: i32, dy: i32, dz: i32, depth: i32) -> bool {
-    let hash = ((dx * 73856093 ^ dy * 19349663 ^ dz * 83492791) % 256);
-    let threshold = select(32, 64, is_prime(depth + 2));
-    return hash < threshold && depth < 8;
-}
-```
-
-These patterns enable non-uniform detail distribution that avoids periodic artifacts while maintaining computational efficiency.
-
 ---
 
 ## Constraint Theory Integration (SuperInstance)
 
-The lab integrates SuperInstance's constraint theory core for exact mathematical foundations:
+The lab provides integration architecture for constraint theory:
 
 | Component | Description | Implementation |
-|---|---|---|
-| **Pythagorean Manifold** | Exact lattice snapping via Pythagorean triples | `constraint_integration/manifold.rs` |
-| **Holonomy Verification** | Constraint consistency across iteration cycles | `constraint_integration/holonomy.rs` |
-| **Hidden Dimensions** | Precision enhancement via dimension lifting | `constraint_integration/hidden_dimensions.rs` |
-| **Gauge Connections** | Parallel transport across parameter tiles | `constraint_integration/gauge.rs` |
-| **Quantization Modes** | Constraint-preserving quantization for export | `constraint_integration/quantization.rs` |
+|-----------|-------------|----------------|
+| **Pythagorean Manifold** | Constraint-preserving lattice snapping | `constraint_integration/manifold.rs` (skeleton) |
+| **Holonomy Verification** | Consistency checking across iteration cycles | `constraint_integration/holonomy.rs` (skeleton) |
+| **Hidden Dimensions** | Precision enhancement via dimension lifting | `constraint_integration/hidden_dimensions.rs` (planned) |
+| **Gauge Connections** | Parallel transport across parameter tiles | `constraint_integration/gauge.rs` (planned) |
+| **Quantization Modes** | Constraint-preserving quantization | `constraint_integration/quantization.rs` (planned) |
 
 **Integration Points:**
-- WGSL export uses exact lattice snapping for parameter bounds
-- Holonomy checker validates formula consistency across depths
-- Hidden dimensions provide numerical stability for deep recursion
+- WGSL export uses exact lattice snapping for parameter bounds (planned)
+- Holonomy checker validates formula consistency across depths (planned)
+- Hidden dimensions provide numerical stability for deep recursion (planned)
 
 ---
 
@@ -177,28 +197,18 @@ Self-contained WGSL compute/fragment shader with:
 - `fn fractal_iterate(z: vec2<f32>, c: vec2<f32>) -> vec2<f32>`
 - `fn fractal_field(p: vec3<f32>) -> f32`
 - Complete shader preamble (uniforms, raymarch, normal estimation, lighting)
+- Pre-baked prime functions and `select()` modulation patterns
 
 ### GLSL
 GLSL translation of WGSL output with type/function mapping:
 - `vec2<f32>` → `vec2`, `mat2x2<f32>` → `mat2`, etc.
-- WGSL builtins → GLSL equivalents (`atan2` → `atan`, `select` → `mix`, etc.)
+- WGSL builtins → GLSL equivalents
 
 ### Fosfora Effect Package
 ```
 <effect-name>/
 ├── shader.wgsl          # The WGSL shader
 └── effect.json          # Metadata + parameters + UI ranges
-```
-
-### Preset JSON
-```json
-{
-  "id": "mandelbulb-wg@v1",
-  "formula": "mandelbulb-wg",
-  "parameters": { "power": 8.0, "maxIter": 64 },
-  "ui_hints": { "power": { "min": 2.0, "max": 16.0 } },
-  "tags": ["waveguide", "prime", "distance_estimator"]
-}
 ```
 
 ---
@@ -208,11 +218,18 @@ GLSL translation of WGSL output with type/function mapping:
 ### Current Test Suite
 - `constraint_integration::complex_ops::tests::test_modulus_nonlinear_exact` — ✅ PASS
 - `constraint_integration::complex_ops::tests::test_complex_power_exact` — ✅ PASS
-- Mutation engine tests: `src/mutation_tests.rs` (run via `cargo test`)
+- Export validation tests covering 13 formula exports
 
-### Planned Export Test Suite
+### Benchmark Infrastructure
+```bash
+# Single-threaded benchmarks for reproducibility
+cargo bench-single -- formula
+cargo bench-single -- formula --prime-schedule
+```
+
+### Future Testing Goals
 ```rust
-// src/tests/export_tests.rs (to be created)
+// src/tests/export_tests.rs
 #[test]
 fn mandelbulb_n8_wgsl_export() {
     let formula = fetch_test_formula("mandelbulb_n8");
@@ -229,19 +246,12 @@ fn prime_schedule_wgsl_generation() {
 }
 ```
 
-### Benchmarking
-```bash
-# Single-threaded benchmarks for reproducibility
-cargo bench-single -- formula
-cargo bench-single -- formula --prime-schedule
-```
-
 ---
 
 ## Future Research Extensions
 
 | Topic | Status | Description |
-|---|---|---|
+|-------|--------|-------------|
 | **Prime Convolution (P-Conv)** | Design | Convolution where kernel weights only active at prime-indexed timesteps |
 | **Fourier-Gated Layers** | Research | Frequency-domain gating for fractal operators |
 | **Attention Mechanisms** | Research | Self-attention over iteration history |
@@ -250,13 +260,15 @@ cargo bench-single -- formula --prime-schedule
 | **Multiscale Prime Waveguide** | Phase 5 | Cross-scale waveguide coupling with prime scheduling |
 | **Differential Geometry of Prime-Indexed Fractals** | Open | Mathematical analysis of prime-gated fractal boundaries |
 
+These topics represent active research directions with varying levels of implementation readiness. Contributions and collaboration welcome.
+
 ---
 
 ## Determinism & Reproducibility
 
-All prime-related operations are **deterministic** by design:
+All prime-related operations are **deterministic by design**:
 - Integer prime checking uses exact arithmetic
-- WGSL generation from DSL produces identical output across CPU/GPU
+- WGSL generation from DSL produces deterministic output
 - Single-threaded Cargo config ensures build reproducibility
 - Mutation engine uses seeded RNG for reproducible evolution
 

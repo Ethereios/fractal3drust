@@ -263,7 +263,9 @@ impl PrimeConvolution {
     pub fn apply(&self, input: &[Vec<Vec<f64>>], depth: usize) -> Vec<Vec<Vec<f64>>> {
         if !self.schedule.is_active(depth) {
             // Return zero output at inactive depths
-            return vec![vec![vec![0.0; input[0].len()]; input[0][0].len()]; self.out_channels];
+            let h = input[0].len();
+            let w = input[0][0].len();
+            return vec![vec![vec![0.0; w]; h]; self.out_channels];
         }
 
         let factor = self.schedule.factor(depth);
@@ -300,28 +302,85 @@ impl PrimeConvolution {
     /// Generate WGSL for the prime convolution operation.
     pub fn as_wgsl(&self) -> String {
         let mut code = String::new();
-        code.push_str("// PrimeConvolution WGSL\n");
+        code.push_str("// PrimeConvolution WGSL - primes gate convolution activation\n");
         code.push_str(&format!(
-            "fn prime_conv_{}x{}_in{}_out{}(input: array<array<f32, {}>, {}>, depth: i32) -> array<array<f32, {}>, {}> {{\n",
-            self.kernel_size, self.kernel_size, self.in_channels, self.out_channels,
-            self.in_channels * self.in_channels, self.out_channels,
-            self.out_channels * self.out_channels, self.out_channels
+            "fn prime_convolve(input: array<f32, {}>, depth: i32, weights: array<f32, {}>) -> array<f32, {}> {{\n",
+            self.in_channels, self.in_channels * self.kernel_size * self.kernel_size, self.out_channels
         ));
-        code.push_str("    var result: array<array<f32, ");
+        code.push_str("    var result: array<f32, ");
         code.push_str(&format!("{}", self.out_channels));
-        code.push_str(">, ");
+        code.push_str("> = array<f32, ");
         code.push_str(&format!("{}", self.out_channels));
-        code.push_str("> = array(\n");
-        for _ in 0..self.out_channels {
-            code.push_str(&format!("        array<f32, {}>(0.0),\n", self.out_channels));
-        }
-        code.push_str("    );\n");
-        code.push_str("    if (is_prime(depth)) {\n");
-        code.push_str("        // Convolution implementation would go here\n");
+        code.push_str(">(0.0);\n");
+        code.push_str("    if (!is_prime(depth)) {\n");
+        code.push_str("        return result;\n");
         code.push_str("    }\n");
+        // Apply convolution: for each output channel, accumulate weighted input
+        code.push_str(&format!("    let factor: f32 = {};\n", self.schedule.amplification));
+        for oc in 0..self.out_channels {
+            code.push_str(&format!("    {{\n"));
+            code.push_str(&format!("        let bias: f32 = {};\n", self.bias[oc]));
+            code.push_str(&format!("        var acc: f32 = bias;\n"));
+            for ic in 0..self.in_channels {
+                for kh in 0..self.kernel_size {
+                    for kw in 0..self.kernel_size {
+                        let weight_idx = oc * self.in_channels * self.kernel_size * self.kernel_size
+                            + ic * self.kernel_size * self.kernel_size
+                            + kh * self.kernel_size + kw;
+                        let weight_val = self.weights[oc][ic][kh][kw];
+                        code.push_str(&format!(
+                            "        acc += input[{}] * weights[{}] * factor;\n",
+                            ic, weight_idx
+                        ));
+                        let _ = weight_val; // Weights passed as array to shader
+                    }
+                }
+            }
+            code.push_str(&format!("        result[{}] = acc;\n", oc));
+            code.push_str(&format!("    }}\n"));
+        }
         code.push_str("    return result;\n");
         code.push_str("}\n");
         code
+    }
+
+    /// Generate WGSL for the weight array initializer.
+    pub fn weights_as_wgsl(&self) -> String {
+        let mut all_weights = Vec::new();
+        for oc in 0..self.out_channels {
+            for ic in 0..self.in_channels {
+                for kh in 0..self.kernel_size {
+                    for kw in 0..self.kernel_size {
+                        all_weights.push(self.weights[oc][ic][kh][kw]);
+                    }
+                }
+            }
+        }
+        let weight_strs: Vec<String> = all_weights
+            .iter()
+            .map(|w| format!("{}", w))
+            .collect();
+        format!(
+            "var<private> prime_conv_weights: array<f32, {}> = array<f32, {}>({});\n",
+            all_weights.len(),
+            all_weights.len(),
+            weight_strs.join(", ")
+        )
+    }
+
+    /// Generate WGSL for the bias array initializer.
+    pub fn bias_as_wgsl(&self) -> String {
+        let bias_strs: Vec<String> = self
+            .bias
+            .iter()
+            .map(|b| format!("{}", b))
+            .collect();
+        format!(
+            "var<private> prime_conv_bias: array<f32, {}> = array<f32, {}>({});\n",
+            self.bias.len(),
+            self.bias.len(),
+            bias_strs.join(", ")
+        )
     }
 }
 
