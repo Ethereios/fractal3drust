@@ -12,6 +12,7 @@
 //!   id, name, formula_ids, mix_rule, iteration_counts, origin, notes
 
 pub mod catalogue;
+pub mod hybrid;
 pub use catalogue::{catalogue as catalogue_list, find};
 
 use serde::{Deserialize, Serialize};

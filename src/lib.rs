@@ -7,6 +7,7 @@ pub mod constraint_integration;
 pub mod export;
 pub mod validate;
 pub mod mutation;
+pub mod hybrid;
 
 #[cfg(test)]
 pub mod tests {
@@ -22,3 +23,4 @@ pub use db::{FormulaEntry, FormulaCategory, PresetEntry, ParameterField, catalog
 pub use export::{export_formula, ExportFormat};
 pub use validate::{validate_formula, validate_constraints, ValidationResult, Metrics};
 pub use mutation::{FormulaMutator, MutationOperation};
+pub use hybrid::{generate_hybrid, export_hybrid, list_hybrid_templates};

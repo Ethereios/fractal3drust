@@ -137,7 +137,7 @@ fn main() -> FractalResult<()> {
             };
 
             // Export formula with prime schedule
-            let _content = export_formula(&formula_entry, format, Some(&output))?;
+            let _content = export_formula(&formula_entry, format, Some(&schedule), Some(&output))?;
 
             // Log the schedule used
             if prime_mode || !override_depths.is_empty() {

@@ -17,6 +17,7 @@ rayon = "1.10"
 clap = { version = "4.5", features = ["derive"] }
 thiserror = "2.0"
 constraint-theory-core = { path = "../constraint-theory-core", default-features = false }
+rand = "0.8"
 
 [[bin]]
 name = "fractal_research"

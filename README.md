@@ -124,6 +124,59 @@ cargo dev eval --formula sdf-recurrent --point -0.5,0.0,0.0 --max-iter 32
 
 ---
 
+## PrimeSchedule Configuration
+
+The `PrimeSchedule` struct controls prime-indexed depth modulation for fractal iteration. It is parsed from CLI flags and passed through the export pipeline to generate shaders with dynamic `is_prime` functions.
+
+### Configuration Fields
+
+| Field             | Type           | Default       | Description                                      |
+|-------------------|----------------|---------------|--------------------------------------------------|
+| `prime_mode`      | `bool`         | `false`       | Enable prime-indexed scheduling                  |
+| `overrides`       | `Vec<usize>`   | `[]`          | Custom depths that are always active             |
+| `amplification`   | `f64`          | `1.0`         | Multiplier at active (prime) depths              |
+| `dampening`       | `f64`          | `0.5`         | Multiplier at inactive (non-prime) depths        |
+
+### Usage Examples
+
+```bash
+# Basic prime mode
+cargo dev -- --export --formula mandelbulb_wg --format wgsl --output mandelbulb-wg.wgsl --prime-mode
+
+# With custom overrides and amplification
+cargo dev -- --export --formula mandelbulb_wg --format wgsl --output mandelbulb-wg.wgsl \
+  --prime-mode --amplification 1.8 --dampening 0.3 --override-depths 3,5,7
+
+# Prime-scheduled sparse-voxel formula
+cargo dev -- --export --formula sparse_voxel_recursive --format wgsl --output svr.wgsl --prime-mode
+```
+
+### How It Works
+
+When prime mode is enabled, the exporter injects a dynamic `is_prime(n)` function into the WGSL shader. At each iteration depth, the schedule decides whether to amplify or dampen the contribution. The `factor(d)` method returns `amplification` if depth `d` is prime or in `overrides`, otherwise `dampening`.
+
+```rust
+let schedule = PrimeSchedule::active()
+    .with_overrides(&[2, 3, 5])
+    .with_amplification(1.8);
+
+// At depth 3 (prime): factor = 1.8 (amplified)
+// At depth 4 (non-prime): factor = 0.5 (dampened)
+```
+
+### CLI Commands
+
+```bash
+cargo dev -- --help
+cargo dev -- --list
+cargo dev -- --info --id mandelbulb_n8
+cargo dev -- --export --formula mandelbulb_n8 --format wgsl --output mandelbulb.wgsl
+cargo dev -- --export --formula mandelbulb_n8 --format glsl --output mandelbulb.glsl
+cargo dev -- --search --strategy evolution --iterations 100
+```
+
+---
+
 ## Research Methodology
 
 This crate is the *engine* behind the discovery methodology in `docs/research.md`. The three pillars of the search are:
@@ -134,7 +187,7 @@ Implement iterative maps in `C^n` using holomorphic-like activations so phase/ma
 
 ### 2. Prime-Indexed Operations
 
-Break recursion symmetry and add aperiodic depth control using prime-number schedules. See `src/formula_dsl/prime.rs` (`PrimeSchedule`, `PrimeSkipMask`, `PrimeCoefficientSequence`, `is_prime`, `prime_sequence`, `primes_up_to`).
+Break recursion symmetry and add aperiodic depth control using prime-number schedules. See `src/formula_dsl/prime.rs` (`PrimeSchedule`, `PrimeSkipMask`, `PrimeConvolution`, `is_prime`, `prime_sequence`, `primes_up_to`).
 
 ### 3. Waveguide-Inspired Dynamics
 
@@ -156,7 +209,7 @@ src/
 │   ├── mod.rs           # FractalFormula trait, IterationState, WGSL types
 │   ├── complex.rs       # Complex-valued operators (power, modulus, phase, learned maps)
 │   ├── waveguide.rs     # Delay lines, scattering matrices, junctions
-│   └── prime.rs         # Prime-indexed scheduling, depth masks, skip rules
+│   └── prime.rs         # Prime-indexed scheduling, depth masks, skip rules, PrimeConvolution
 ├── db/                  # Database schema for cataloging formulas/presets
 ├── export/              # WGSL / Fosfora / Shader Studio export traits
 ├── constraint_integration/  # SuperInstance constraint theory integration
@@ -168,7 +221,9 @@ src/
 ├── mutation.rs          # Formula mutator engine with MutationOperation
 ├── mutation_test_cases.rs  # Mutation engine test suite
 ├── mutation_tests.rs            # Mutation test runner
-└── error.rs             # Error types (thiserror)
+├── error.rs             # Error types (thiserror)
+└── tests/
+    └── export_tests.rs   # Export validation tests
 ```
 
 ### Key Data Flow Diagrams

@@ -121,7 +121,7 @@ fn assert_export_valid(
         .find(|f| f.id == formula_id)
         .ok_or_else(|| format!("Formula not found: {}", formula_id))?;
 
-    let content = export_formula(&formula, format, None)?;
+    let content = export_formula(&formula, format, None, None)?;
 
     for pattern in &expected.required_patterns {
         if !content.contains(pattern) {
@@ -176,27 +176,27 @@ mod tests {
         let formulas = catalogue();
         assert!(!formulas.is_empty(), "Catalogue should contain formulas");
 
-        for formula in &formulas {
-            let wgsl = export_formula(formula, ExportFormat::Wgsl, None);
-            assert!(
-                wgsl.is_ok(),
-                "WGSL export for '{}' should succeed",
-                formula.id
-            );
-            let content = wgsl.unwrap();
-            assert!(
-                !content.is_empty(),
-                "WGSL export for '{}' should not be empty",
-                formula.id
-            );
-        }
+for formula in &formulas {
+             let wgsl = export_formula(formula, ExportFormat::Wgsl, None, None);
+             assert!(
+                 wgsl.is_ok(),
+                 "WGSL export for '{}' should succeed",
+                 formula.id
+             );
+             let content = wgsl.unwrap();
+             assert!(
+                 !content.is_empty(),
+                 "WGSL export for '{}' should not be empty",
+                 formula.id
+             );
+         }
     }
 
     #[test]
     fn test_glsl_export_not_empty() {
         let formulas = catalogue();
         for formula in &formulas {
-            let glsl = export_formula(formula, ExportFormat::Glsl, None);
+            let glsl = export_formula(formula, ExportFormat::Glsl, None, None);
             assert!(
                 glsl.is_ok(),
                 "GLSL export for '{}' should succeed",
@@ -220,7 +220,7 @@ mod tests {
                 .find(|f| f.id == form_id)
                 .expect(&format!("Formula '{}' should exist", form_id));
 
-            let wgsl = export_formula(&formula, ExportFormat::Wgsl, None)
+            let wgsl = export_formula(&formula, ExportFormat::Wgsl, None, None)
                 .expect("WGSL export should succeed");
 
             assert!(

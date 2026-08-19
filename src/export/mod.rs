@@ -15,11 +15,12 @@ pub use glsl::*;
 pub use fosfora::*;
 
 use crate::db::FormulaEntry;
+use crate::formula_dsl::prime::PrimeSchedule;
 
 /// Export a formula to the specified format.
-pub fn export_formula(entry: &FormulaEntry, format: ExportFormat, output: Option<&str>) -> Result<String, String> {
+pub fn export_formula(entry: &FormulaEntry, format: ExportFormat, prime_schedule: Option<&PrimeSchedule>, output: Option<&str>) -> Result<String, String> {
     let content = match format {
-        ExportFormat::Wgsl => wgsl::export_wgsl(entry),
+        ExportFormat::Wgsl => wgsl::export_wgsl(entry, prime_schedule),
         ExportFormat::Glsl => glsl::export_glsl_with_docs(entry),
         ExportFormat::Fosfora => fosfora::export_fosfora_json(entry),
     };

@@ -198,3 +198,135 @@ impl PrimeSkipMask {
         )
     }
 }
+
+/// Prime Convolution operator: applies convolution kernels only at prime-indexed depths.
+///
+/// This operator creates sparse, aperiodic frequency responses by activating
+/// convolution weights only at prime depths during iteration. Useful for
+/// generating non-repetitive fractal detail patterns.
+#[derive(Clone, Debug)]
+pub struct PrimeConvolution {
+    /// Number of input channels
+    pub in_channels: usize,
+    /// Number of output channels
+    pub out_channels: usize,
+    /// Kernel size (e.g., 3 for 3x3, 5 for 5x5)
+    pub kernel_size: usize,
+    /// Convolution weights: [out_channels][in_channels][kernel_size][kernel_size]
+    pub weights: Vec<Vec<Vec<Vec<f64>>>>,
+    /// Bias terms per output channel
+    pub bias: Vec<f64>,
+    /// Prime schedule controlling activation
+    pub schedule: PrimeSchedule,
+}
+
+impl PrimeConvolution {
+    /// Create a new PrimeConvolution with random initialization.
+    pub fn new(in_channels: usize, out_channels: usize, kernel_size: usize) -> Self {
+        use rand::Rng;
+        let mut rng = rand::thread_rng();
+        let weights = (0..out_channels)
+            .map(|_| {
+                (0..in_channels)
+                    .map(|_| {
+                        (0..kernel_size)
+                            .map(|_| {
+                                (0..kernel_size)
+                                    .map(|_| rng.gen_range(-0.05..0.05))
+                                    .collect()
+                            })
+                            .collect()
+                    })
+                    .collect()
+            })
+            .collect();
+        let bias = vec![0.0; out_channels];
+        
+        Self {
+            in_channels,
+            out_channels,
+            kernel_size,
+            weights,
+            bias,
+            schedule: PrimeSchedule::active(),
+        }
+    }
+
+    /// Create with a custom prime schedule.
+    pub fn with_schedule(mut self, schedule: PrimeSchedule) -> Self {
+        self.schedule = schedule;
+        self
+    }
+
+    /// Apply convolution at a specific depth.
+    /// Returns output channels, or zeros if depth is not active per schedule.
+    pub fn apply(&self, input: &[Vec<Vec<f64>>], depth: usize) -> Vec<Vec<Vec<f64>>> {
+        if !self.schedule.is_active(depth) {
+            // Return zero output at inactive depths
+            return vec![vec![vec![0.0; input[0].len()]; input[0][0].len()]; self.out_channels];
+        }
+
+        let factor = self.schedule.factor(depth);
+        let h = input[0].len();
+        let w = input[0][0].len();
+        let pad = self.kernel_size / 2;
+        let mut output = vec![vec![vec![0.0; w]; h]; self.out_channels];
+
+        for oc in 0..self.out_channels {
+            for ic in 0..self.in_channels {
+                for kh in 0..self.kernel_size {
+                    for kw in 0..self.kernel_size {
+                        let weight = self.weights[oc][ic][kh][kw] * factor;
+                        for y in 0..h {
+                            for x in 0..w {
+                                let iy = (y + kh).saturating_sub(pad).min(h - 1);
+                                let ix = (x + kw).saturating_sub(pad).min(w - 1);
+                                output[oc][y][x] += input[ic][iy][ix] * weight;
+                            }
+                        }
+                    }
+                }
+            }
+            // Add bias
+            for y in 0..h {
+                for x in 0..w {
+                    output[oc][y][x] += self.bias[oc];
+                }
+            }
+        }
+        output
+    }
+
+    /// Generate WGSL for the prime convolution operation.
+    pub fn as_wgsl(&self) -> String {
+        let mut code = String::new();
+        code.push_str("// PrimeConvolution WGSL\n");
+        code.push_str(&format!(
+            "fn prime_conv_{}x{}_in{}_out{}(input: array<array<f32, {}>, {}>, depth: i32) -> array<array<f32, {}>, {}> {{\n",
+            self.kernel_size, self.kernel_size, self.in_channels, self.out_channels,
+            self.in_channels * self.in_channels, self.out_channels,
+            self.out_channels * self.out_channels, self.out_channels
+        ));
+        code.push_str("    var result: array<array<f32, ");
+        code.push_str(&format!("{}", self.out_channels));
+        code.push_str(">, ");
+        code.push_str(&format!("{}", self.out_channels));
+        code.push_str("> = array(\n");
+        for _ in 0..self.out_channels {
+            code.push_str(&format!("        array<f32, {}>(0.0),\n", self.out_channels));
+        }
+        code.push_str("    );\n");
+        code.push_str("    if (is_prime(depth)) {\n");
+        code.push_str("        // Convolution implementation would go here\n");
+        code.push_str("    }\n");
+        code.push_str("    return result;\n");
+        code.push_str("}\n");
+        code
+    }
+}
+
+impl Default for PrimeConvolution {
+    fn default() -> Self {
+        Self::new(3, 3, 3)
+    }
+}
