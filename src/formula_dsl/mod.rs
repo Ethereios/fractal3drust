@@ -13,6 +13,7 @@
 //!   branch selection via prime-indexed rules.
 
 pub mod complex;
+pub mod mandelbulb;
 pub mod prime;
 pub mod waveguide;
 

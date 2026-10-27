@@ -168,28 +168,67 @@ This transparency enables coordinated development across research methodology an
 - Practical implementation pending (documented integration points exist)
 
 ---
-
-## Formula Catalogue (Implemented)
-
-| ID | Name | Family | Dimension | Category | Prime Support | Waveguide Support |
-|----|------|--------|-----------|----------|---------------|-------------------|
-| mandelbulb_n8 | Mandelbulb (n=8) | mandelbulb | 3 | DistanceEstimator | ✓ | |
-| mandelbulb_n7 | Mandelbulb (n=7) | mandelbulb | 3 | DistanceEstimator | ✓ | |
-| mandelbox_standard | Mandelbox | mandelbox | 3 | DistanceEstimator | ✓ | |
-| menger_sponge | Menger Sponge | menger | 3 | DistanceEstimator | ✓ | |
-| quaternion_julia | Quaternion Julia | quat_julia | 4 | DistanceEstimator | ✓ | |
-| triplex_julia | Triplex Julia | triplex | 3 | DistanceEstimator | ✓ | |
-| ifs_tetrahedron | IFS Tetrahedron | ifs | 3 | IFS | ✓ | |
-| fold_transform | Fold Transform | transform | 3 | Transform | ✓ | |
-| aexion | Aexion | aexion | 3 | DistanceEstimator | ✓ | |
-| bristorbrot | Bristorbrot | bristorbrot | 4 | DistanceEstimator | ✓ | |
-| mandelbulb_wg | Mandelbulb-WG | mandelbulb_wg | 3 | DistanceEstimator | ✓ | ✓ |
-| sdf_recurrent | SDF-Recurrent | sdf_recurrent | 3 | DistanceEstimator | ✓ | ✓ |
-| sparse_voxel_recursive | Sparse-Voxel-Recursive | sparse_voxel | 3 | DistanceEstimator | ✓ | ✓ |
-
----
-
-## Export Pipeline
+ 
+ ## Formula Catalogue (Implemented)
+ 
+ ### fractal3drust Catalogue (Research Formulas)
+ 
+ | ID | Name | Family | Dimension | Category | Prime Support | Waveguide Support |
+ |----|------|--------|-----------|----------|---------------|-------------------|
+ | mandelbulb_n8 | Mandelbulb (n=8) | mandelbulb | 3 | DistanceEstimator | ✓ | |
+ | mandelbulb_n7 | Mandelbulb (n=7) | mandelbulb | 3 | DistanceEstimator | ✓ | |
+ | mandelbox_standard | Mandelbox | mandelbox | 3 | DistanceEstimator | ✓ | |
+ | menger_sponge | Menger Sponge | menger | 3 | DistanceEstimator | ✓ | |
+ | quaternion_julia | Quaternion Julia | quat_julia | 4 | DistanceEstimator | ✓ | |
+ | triplex_julia | Triplex Julia | triplex | 3 | DistanceEstimator | ✓ | |
+ | ifs_tetrahedron | IFS Tetrahedron | ifs | 3 | IFS | ✓ | |
+ | fold_transform | Fold Transform | transform | 3 | Transform | ✓ | |
+ | aexion | Aexion | aexion | 3 | DistanceEstimator | ✓ | |
+ | bristorbrot | Bristorbrot | bristorbrot | 4 | DistanceEstimator | ✓ | |
+ | mandelbulb_wg | Mandelbulb-WG | mandelbulb_wg | 3 | DistanceEstimator | ✓ | ✓ |
+ | sdf_recurrent | SDF-Recurrent | sdf_recurrent | 3 | DistanceEstimator | ✓ | ✓ |
+ | sparse_voxel_recursive | Sparse-Voxel-Recursive | sparse_voxel | 3 | DistanceEstimator | ✓ | ✓ |
+ 
+ ### mb3d-rs Built-in Formula Mapping
+ 
+ The 8 built-in formula types in mb3d-rs (`src/formulas.rs`) map to the catalogue as follows:
+ 
+ | mb3d Variant | MB3D Name | fractal3drust Family | Dimensions | DE Method | Status |
+ |--------------|-----------|---------------------|------------|-----------|--------|
+ | `IntPow` | "Integer Power" | mandelbulb_n8/n7 | 3 | Analytic (type 0) | ✅ Mapped |
+ | `RealPower` | "Real Power" | mandelbulb_n8 | 3 | Analytic (type 0) | ✅ Mapped |
+ | `Quaternion` | "Quaternion" | quaternion_julia | 4 | 4D numeric (type 4) | ✅ Mapped |
+ | `Tricorn` | "Tricorn" | — | 3 | Analytic (type 0) | ❌ Missing from catalogue |
+ | `AmazingBox` | "Amazing Box" | mandelbox_standard | 3 | Analytic (type 11) | ✅ Mapped |
+ | `Bulbox` | "Bulbox" | — | 3 | Hybrid (0.2 scale) | ❌ Hybrid - needs `Hybrid` category |
+ | `FoldingIntPow` | "Folding Int Pow" | — | 3 | Hybrid (0.5 scale) | ❌ Hybrid - needs `Hybrid` category |
+ | `AexionC` | "Aexion C" | aexion | 3 | Analytic (type 0) | ✅ Mapped |
+ | `Custom` | `.m3f` files | Variable | Variable | By `DEoption` | ✅ Via `DEoption` classification |
+ 
+ ### Custom Formula Classification (`.m3f` files)
+ 
+ Custom formulas are classified by their `DEoption` value (from `HeaderTrafos.pas` / `CustomFormulas.pas`):
+ 
+ | DEoption | Classification | Notes |
+ |----------|----------------|-------|
+ | 2, 11 | 3D analytic DE | `mandelbulb_wg`, `mandelbulb_n8` style |
+ | 4 | 4D numeric DE | Quaternion style |
+ | 5, 6 | 4D analytic DE | Extended 4D formulas |
+ | -1, -2 | Ads (attractor?) | Special handling |
+ | 20 | dIFS | Iterated Function Systems |
+ | 21, 22 | dIFS transforms | IFS with transformations |
+ | Others | 3D fallback | Default numeric gradient DE |
+ 
+ ### Classification Gaps & Next Steps
+ 
+ 1. **Add `Tricorn`** to fractal3drust catalogue (direct port from mb3d)
+ 2. **Add `Hybrid` category** for formulas mixing base types (Bulbox = bulb + box, FoldingIntPow = fold + bulb)
+ 3. **Implement mb3d formula porting pipeline** so all mb3d built-ins + custom `.m3f` formulas are usable in fractal3drust DSL
+ 4. **Extend `FormulaCategory` enum** with `Hybrid`, `Spectral`, `Recursive` as documented in GOALS.md Phase 6.2
+ 
+ ---
+ 
+ ## Export Pipeline
 
 ### WGSL (Shader Studio)
 Self-contained WGSL compute/fragment shader with:

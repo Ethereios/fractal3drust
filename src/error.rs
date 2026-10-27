@@ -14,6 +14,8 @@ pub enum FractalError {
     Render(String),
     #[error("Evaluation error: {0}")]
     Eval(String),
+    #[error("Invalid override depths: {0}")]
+    InvalidOverrideDepths(String),
 }
 
 impl From<String> for FractalError {

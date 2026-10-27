@@ -46,8 +46,8 @@ enum Commands {
         #[arg(long, help = "Enable prime-indexed scheduling for depth modulation")]
         prime_mode: bool,
         /// Override depths that are always active (comma-separated list, e.g. 2,3,5,7)
-        #[arg(long, value_parser = parse_comma_separated, help = "Custom depths to always activate")]
-        override_depths: Vec<usize>,
+        #[arg(long, help = "Custom depths to always activate")]
+        override_depths: Option<String>,
         /// Amplification factor applied at active depths
         #[arg(short = 'a', long, default_value_t = 1.0, help = "Multiplier for active depths")]
         amplification: f64,
@@ -128,10 +128,16 @@ fn main() -> FractalResult<()> {
             let formula_entry = find(&formula)
                 .ok_or_else(|| FractalError::InvalidFormula(format!("Formula not found: {}", formula)))?;
 
+            // Parse override depths from CLI flag
+            let override_vec = match override_depths {
+                Some(s) => parse_comma_separated(&s).map_err(|e| FractalError::InvalidOverrideDepths(e))?,
+                None => Vec::new(),
+            };
+
             // Build PrimeSchedule from CLI flags
             let schedule = PrimeSchedule {
                 prime_mode,
-                overrides: override_depths.clone(),
+                overrides: override_vec.clone(),
                 amplification,
                 dampening,
             };
@@ -140,10 +146,10 @@ fn main() -> FractalResult<()> {
             let _content = export_formula(&formula_entry, format, Some(&schedule), Some(&output))?;
 
             // Log the schedule used
-            if prime_mode || !override_depths.is_empty() {
+            if prime_mode || !override_vec.is_empty() {
                 println!(
                     "Exported formula {} as {} to {} with PrimeSchedule (mode={}, overrides={:?}, amp={}, damp={})",
-                    formula_entry.name, format, output, prime_mode, override_depths, amplification, dampening
+                    formula_entry.name, format, output, prime_mode, override_vec, amplification, dampening
                 );
             } else {
                 println!(
@@ -157,7 +163,7 @@ fn main() -> FractalResult<()> {
                 println!(
                     "Prime schedule: {} active depths, {} override depths",
                     if prime_mode { "prime-indexed" } else { "uniform" },
-                    override_depths.len()
+                    override_vec.len()
                 );
             }
         }
